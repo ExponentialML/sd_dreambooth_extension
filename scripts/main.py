@@ -224,6 +224,7 @@ def on_ui_tabs():
                         with gr.Column():
                             gr.HTML(value="General")
                             db_use_lora = gr.Checkbox(label="Use LORA", value=False)
+                            db_use_lora_extended = gr.Checkbox("Use Extended LORA (Beta)", value=False)
                             db_train_imagic_only = gr.Checkbox(label="Train Imagic Only", value=False)
                             db_train_inpainting = gr.Checkbox(label="Train Inpainting Model", value=False,
                                                               visible=False)
@@ -615,6 +616,7 @@ def on_ui_tabs():
             db_train_unfrozen,
             db_use_ema,
             db_use_lora,
+            db_use_lora_extended,
             db_use_subdir,
             c1_class_data_dir,
             c1_class_guidance_scale,

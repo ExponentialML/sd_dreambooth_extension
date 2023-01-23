@@ -36,7 +36,8 @@ from extensions.sd_dreambooth_extension.dreambooth.sample_dataset import SampleD
 from extensions.sd_dreambooth_extension.dreambooth.utils import cleanup, unload_system_models, parse_logs, printm, \
     import_model_class_from_model_name_or_path, db_save_image
 from extensions.sd_dreambooth_extension.dreambooth.xattention import optim_to
-from extensions.sd_dreambooth_extension.lora_diffusion.lora import save_lora_weight, inject_trainable_lora
+from extensions.sd_dreambooth_extension.lora_diffusion.lora import save_lora_weight, \
+inject_trainable_lora, inject_trainable_lora_extended, UNET_DEFAULT_TARGET_REPLACE, UNET_EXTENDED_TARGET_REPLACE
 from modules import shared, paths
 
 try:
@@ -261,11 +262,13 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
             else:
                 lora_path = None
 
-
-            unet_lora_params, _ = inject_trainable_lora(
+            lora_injection = inject_trainable_lora if not args.use_extended_lora else inject_trainable_lora_extended
+            target_module = UNET_DEFAULT_TARGET_REPLACE if not args.use_extended_lora else UNET_EXTENDED_TARGET_REPLACE       
+            unet_lora_params, _ = lora_injection(
                 unet,
                 r=args.lora_rank,
-                loras=lora_path
+                loras=lora_path,
+                target_replace_module=target_module
             )
 
             if stop_text_percentage != 0:

@@ -98,6 +98,7 @@ class DreamboothConfig(BaseModel):
     use_concepts: bool = False
     use_ema: bool = True
     use_lora: bool = False
+    use_lora_extended: bool = False
     use_subdir: bool = False
     v2: bool = False
 
