@@ -474,7 +474,7 @@ class ImageBuilder:
                     maybe_unet_path=lora_model_path,
                     token="None",
                     r=config.lora_rank,
-                    target_replace_module=target_module
+                    unet_target_replace_module=target_module
                 )
                 
                 tune_lora_scale(self.image_pipe.unet, config.lora_weight)
