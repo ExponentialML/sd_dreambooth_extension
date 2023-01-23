@@ -580,6 +580,8 @@ def weight_apply_lora(
 def weight_apply_lora_extended(
     model, loras, target_replace_module=UNET_EXTENDED_TARGET_REPLACE, alpha=1.0
 ):
+    
+    found_conv_class = False
 
     for _m, _n, _child_module in _find_modules(
         model, target_replace_module, search_class=[nn.Linear, nn.Conv2d]
@@ -592,8 +594,9 @@ def weight_apply_lora_extended(
         # W <- W + U * D
         if _child_module.__class__ == nn.Linear:
             weight = weight + alpha * (up_weight @ down_weight).type(weight.dtype)
-        if _child_module.__class__ == nn.Conv2d:
+        if _child_module.__class__ == nn.Conv2d and found_conv_class == False:
             print("Found conv2d classes. Skipping, not yet supported.")
+            found_conv_class = True
 
         _child_module.weight = nn.Parameter(weight)
 
