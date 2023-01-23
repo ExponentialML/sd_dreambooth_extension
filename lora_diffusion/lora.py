@@ -269,7 +269,8 @@ def inject_trainable_lora_extended(
     """
     inject lora into model, and returns lora parameter groups.
     """
-
+    
+    print("Training extended LoRA Model.")
     require_grad_params = []
     names = []
 
@@ -592,7 +593,7 @@ def weight_apply_lora_extended(
             weight = weight + alpha * (up_weight @ down_weight).type(weight.dtype)
         if _child_module.__class__ == nn.Conv2d:
             print("Found conv2d classes. Skipping, not yet supported.")
-            
+
         _child_module.weight = nn.Parameter(weight)
 
 def monkeypatch_or_replace_lora(
