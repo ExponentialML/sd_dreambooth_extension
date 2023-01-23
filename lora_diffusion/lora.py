@@ -1,3 +1,4 @@
+import os
 import json
 import math
 from itertools import groupby
@@ -358,8 +359,8 @@ def save_lora_weight(
     for _up, _down in extract_lora_ups_down(
         model, target_replace_module=target_replace_module
     ):
-        weights.append(_up.weight.to("cpu").to(torch.float16))
-        weights.append(_down.weight.to("cpu").to(torch.float16))
+        weights.append(_up.weight.to("cpu").to(torch.float32))
+        weights.append(_down.weight.to("cpu").to(torch.float32))
 
     torch.save(weights, path)
 
