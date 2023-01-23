@@ -26,7 +26,8 @@ from extensions.sd_dreambooth_extension.dreambooth.db_config import DreamboothCo
 from extensions.sd_dreambooth_extension.dreambooth.db_shared import status
 from extensions.sd_dreambooth_extension.dreambooth.prompt_data import PromptData
 from extensions.sd_dreambooth_extension.dreambooth.utils import cleanup, get_checkpoint_match, get_images, db_save_image
-from extensions.sd_dreambooth_extension.lora_diffusion.lora import patch_pipe, tune_lora_scale, _text_lora_path_ui
+from extensions.sd_dreambooth_extension.lora_diffusion.lora import patch_pipe, tune_lora_scale, _text_lora_path_ui, \
+UNET_DEFAULT_TARGET_REPLACE, UNET_EXTENDED_TARGET_REPLACE 
 from modules import shared, devices, sd_models, sd_hijack, prompt_parser, lowvram
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessing, Processed, \
     get_fixed_seed, create_infotext, decode_first_stage
@@ -466,12 +467,14 @@ class ImageBuilder:
             
                 lora_model_path = os.path.join(db_shared.models_path, "lora", lora_model)
                 lora_txt_path = _text_lora_path_ui(lora_model)
-                
+                target_module = UNET_DEFAULT_TARGET_REPLACE if not config.use_lora_extended else UNET_EXTENDED_TARGET_REPLACE 
+
                 patch_pipe(
                     pipe=self.image_pipe,
                     maybe_unet_path=lora_model_path,
                     token="None",
-                    r=config.lora_rank
+                    r=config.lora_rank,
+                    target_replace_module=target_module
                 )
                 
                 tune_lora_scale(self.image_pipe.unet, config.lora_weight)
