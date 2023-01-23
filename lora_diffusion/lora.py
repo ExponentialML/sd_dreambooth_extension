@@ -575,6 +575,25 @@ def weight_apply_lora(
         weight = weight + alpha * (up_weight @ down_weight).type(weight.dtype)
         _child_module.weight = nn.Parameter(weight)
 
+def weight_apply_lora_extended(
+    model, loras, target_replace_module=UNET_EXTENDED_TARGET_REPLACE, alpha=1.0
+):
+
+    for _m, _n, _child_module in _find_modules(
+        model, target_replace_module, search_class=[nn.Linear, nn.Conv2d]
+    ):
+        weight = _child_module.weight
+
+        up_weight = loras.pop(0).detach().to(weight.device)
+        down_weight = loras.pop(0).detach().to(weight.device)
+
+        # W <- W + U * D
+        if _child_module.__class__ == nn.Linear:
+            weight = weight + alpha * (up_weight @ down_weight).type(weight.dtype)
+        if _child_module.__class__ == nn.Conv2d:
+            print("Found conv2d classes. Skipping, not yet supported.")
+            
+        _child_module.weight = nn.Parameter(weight)
 
 def monkeypatch_or_replace_lora(
     model,
