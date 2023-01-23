@@ -469,7 +469,7 @@ class ImageBuilder:
                 
                 patch_pipe(
                     pipe=self.image_pipe,
-                    unet_path=lora_model_path,
+                    maybe_unet_path=lora_model_path,
                     token="None",
                     r=config.lora_rank
                 )

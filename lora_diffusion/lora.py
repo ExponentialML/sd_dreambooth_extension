@@ -770,6 +770,10 @@ def _text_lora_path(path: str) -> str:
     return ".".join(path.split(".")[:-1] + ["text_encoder", "pt"])
 
 
+def _text_lora_path_ui(path: str) -> str:
+    return path.replace(".pt", "_txt.pt")
+
+
 def _ti_lora_path(path: str) -> str:
     assert path.endswith(".pt"), "Only .pt files are supported"
     return ".".join(path.split(".")[:-1] + ["ti", "pt"])
@@ -855,7 +859,7 @@ def patch_pipe(
             unet_path = maybe_unet_path[:-16] + ".pt"
 
         ti_path = _ti_lora_path(unet_path)
-        text_path = _text_lora_path(unet_path)
+        text_path = _text_lora_path_ui(unet_path)
 
         if patch_unet:
             print("LoRA : Patching Unet")
@@ -866,14 +870,23 @@ def patch_pipe(
                 target_replace_module=unet_target_replace_module,
             )
 
-        if patch_text:
+        if patch_text or os.path.exists(text_path):
             print("LoRA : Patching text encoder")
-            monkeypatch_or_replace_lora(
-                pipe.text_encoder,
-                torch.load(text_path),
-                target_replace_module=text_target_replace_module,
-                r=r,
-            )
+
+            if unet_target_replace_module == DEFAULT_TARGET_REPLACE:
+                monkeypatch_or_replace_lora(
+                    pipe.text_encoder,
+                    torch.load(text_path),
+                    target_replace_module=text_target_replace_module,
+                    r=r,
+                )
+            else:
+                monkeypatch_or_replace_lora_extended(
+                    pipe.text_encoder,
+                    torch.load(text_path),
+                    target_replace_module=text_target_replace_module,
+                    r=r,
+                )
         if patch_ti:
             print("LoRA : Patching token input")
             token = load_learned_embed_in_clip(
