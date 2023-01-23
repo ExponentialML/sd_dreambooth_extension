@@ -396,7 +396,7 @@ def compile_checkpoint(model_name: str, lora_path: str=None, reload_models: bool
             if os.path.exists(lora_path):
                 checkpoint_path = checkpoint_path.replace(checkpoint_ext, f"_lora{checkpoint_ext}")
                 printi(f"Applying lora weight of alpha: {config.lora_weight} to unet...", log=log)
-                weight_apply = weight_apply_lora if not config.use_extended_lora else weight_apply_lora_extended
+                weight_apply = weight_apply_lora if not config.use_lora_extended else weight_apply_lora_extended
                 weight_apply(loaded_pipeline.unet, torch.load(lora_path), alpha=config.lora_weight)
                 printi("Saving lora unet...", log=log)
                 loaded_pipeline.unet.save_pretrained(os.path.join(config.pretrained_model_name_or_path, "unet_lora"))

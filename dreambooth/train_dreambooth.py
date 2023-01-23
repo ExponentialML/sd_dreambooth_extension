@@ -262,8 +262,8 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
             else:
                 lora_path = None
 
-            lora_injection = inject_trainable_lora if not args.use_extended_lora else inject_trainable_lora_extended
-            target_module = UNET_DEFAULT_TARGET_REPLACE if not args.use_extended_lora else UNET_EXTENDED_TARGET_REPLACE       
+            lora_injection = inject_trainable_lora if not args.use_lora_extended else inject_trainable_lora_extended
+            target_module = UNET_DEFAULT_TARGET_REPLACE if not args.use_lora_extended else UNET_EXTENDED_TARGET_REPLACE       
             unet_lora_params, _ = lora_injection(
                 unet,
                 r=args.lora_rank,
