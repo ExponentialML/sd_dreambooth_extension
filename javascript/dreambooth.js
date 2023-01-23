@@ -268,7 +268,7 @@ let db_titles = {
     "Use Lifetime Steps When Saving": "When checked, will save preview images and checkpoints using lifetime steps, versus current training steps.",
     "Use EMA": "Enabling this will provide better results and editability, but cost more VRAM.",
     "Use LORA": "Uses Low-rank Adaptation for Fast Text-to-Image Diffusion Fine-tuning. Uses less VRAM, saves a .pt file instead of a full checkpoint",
-    "Use Extended LORA (Beta)": "Trains LoRA with conv2d layers on the UNET layers. Allows for better quality LoRA training."
+    "Use Extended LORA (Beta)": "Trains LoRA with conv2d layers on the UNET layers. Allows for better quality LoRA training, and must be set before training and before merging an extended LoRA model."
 }
 
 // Do a thing when the UI updates
