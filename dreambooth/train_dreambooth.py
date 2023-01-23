@@ -679,7 +679,8 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 out_file = os.path.join(out_file, f"{lora_model_name}_{args.revision}.pt")
                                 # print(f"\nSaving lora weights at step {args.revision}")
                                 # Save a pt file
-                                save_lora_weight(s_pipeline.unet, out_file)
+                                target_module = DEFAULT_TARGET_REPLACE if not args.use_lora_extended else UNET_EXTENDED_TARGET_REPLACE
+                                save_lora_weight(s_pipeline.unet, out_file, target_replace_module=target_module)
                                 if stop_text_percentage != 0:
                                     out_txt = out_file.replace(".pt", "_txt.pt")
                                     save_lora_weight(s_pipeline.text_encoder,
