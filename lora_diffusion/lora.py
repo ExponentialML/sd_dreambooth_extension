@@ -889,30 +889,34 @@ def patch_pipe(
 
         if patch_unet:
             print("LoRA : Patching Unet")
-            monkeypatch_or_replace_lora(
+
+            if unet_target_replace_module == DEFAULT_TARGET_REPLACE:
+
+                monkeypatch_or_replace_lora(
+                    pipe.unet,
+                    torch.load(unet_path),
+                    r=r,
+                    target_replace_module=DEFAULT_TARGET_REPLACE,
+                )
+            else:
+                
+                monkeypatch_or_replace_lora_extended(
                 pipe.unet,
                 torch.load(unet_path),
                 r=r,
-                target_replace_module=unet_target_replace_module,
+                target_replace_module=UNET_EXTENDED_TARGET_REPLACE,
             )
 
         if patch_text or os.path.exists(text_path):
             print("LoRA : Patching text encoder")
 
-            if unet_target_replace_module == DEFAULT_TARGET_REPLACE:
-                monkeypatch_or_replace_lora(
+            monkeypatch_or_replace_lora(
                     pipe.text_encoder,
                     torch.load(text_path),
                     target_replace_module=text_target_replace_module,
                     r=r,
                 )
-            else:
-                monkeypatch_or_replace_lora_extended(
-                    pipe.text_encoder,
-                    torch.load(text_path),
-                    target_replace_module=text_target_replace_module,
-                    r=r,
-                )
+
         if patch_ti:
             print("LoRA : Patching token input")
             token = load_learned_embed_in_clip(
