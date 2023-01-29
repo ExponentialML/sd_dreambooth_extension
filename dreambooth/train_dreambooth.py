@@ -645,6 +645,18 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                         pbar.reset(4)
                         pbar.update()
                         try:
+                            
+                            vae_name = f"vae_train_{args.revision}"
+                            vae_path = os.path.join(args.pretrained_model_name_or_path, vae_name)
+                            os.makedirs(vae_path, exist_ok=True)
+
+                            if args.train_vae:
+                                if os.path.exists(vae_path):
+                                    print(f"Saving trained VAE to {vae_path}")
+                                    vae.save_pretrained(vae_path)
+                                else:
+                                    print("Trained VAE not found. Continuing...")
+
                             if not args.use_lora:
                                 out_file = None
                                 if save_snapshot:
@@ -680,17 +692,8 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.set_description("Compiling Checkpoint")
                                 snap_rev = str(args.revision) if save_snapshot else ""
                                 compile_checkpoint(args.model_name, reload_models=False, lora_path=out_file, log=False,
-                                                   snap_rev=snap_rev)
+                                                   snap_rev=snap_rev, trained_vae_name=vae_name, train_vae=args.train_vae)
                                 pbar.update()
-
-                            if args.train_vae:
-                                vae_path = os.path.join(args.pretrained_model_name_or_path, f"vae_train_{args.revision}")
-                                os.makedirs(vae_path, exist_ok=True)
-                                if os.path.exists(vae_path):
-                                    print(f"Saving trained VAE to {vae_path}")
-                                    vae.save_pretrained(vae_path)
-                                else:
-                                    print("Trained VAE not found. Continuing...")
 
                             if args.use_ema:
                                 ema_unet.restore(unet.parameters())
