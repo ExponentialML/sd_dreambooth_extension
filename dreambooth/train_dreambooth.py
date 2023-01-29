@@ -644,19 +644,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                         pbar.set_description("Saving Weights")
                         pbar.reset(4)
                         pbar.update()
-
-                        vae_name = f"vae_train_{args.revision}"
-                        vae_path = os.path.join(args.pretrained_model_name_or_path, vae_name)
-                        
                         try:
-                            if args.train_vae:
-                                os.makedirs(vae_path, exist_ok=True)
-                                if os.path.exists(vae_path):
-                                    print(f"Saving trained VAE to {vae_path}")
-                                    vae.save_pretrained(vae_path)
-                                else:
-                                    print("Trained VAE not found. Continuing...")
-
                             if not args.use_lora:
                                 out_file = None
                                 if save_snapshot:
@@ -692,8 +680,17 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.set_description("Compiling Checkpoint")
                                 snap_rev = str(args.revision) if save_snapshot else ""
                                 compile_checkpoint(args.model_name, reload_models=False, lora_path=out_file, log=False,
-                                                   snap_rev=snap_rev, trained_vae_name=vae_name, train_vae=args.train_vae)
+                                                   snap_rev=snap_rev)
                                 pbar.update()
+
+                            if args.train_vae:
+                                vae_path = os.path.join(args.pretrained_model_name_or_path, f"vae_train_{args.revision}")
+                                os.makedirs(vae_path, exist_ok=True)
+                                if os.path.exists(vae_path):
+                                    print(f"Saving trained VAE to {vae_path}")
+                                    vae.save_pretrained(vae_path)
+                                else:
+                                    print("Trained VAE not found. Continuing...")
 
                             if args.use_ema:
                                 ema_unet.restore(unet.parameters())
@@ -936,19 +933,10 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
 
                         # Add the prior loss to the instance loss.
                         prior_loss *= current_prior_loss_weight
-<<<<<<< HEAD
-                    
-                    loss = instance_loss + prior_loss
-||||||| parent of 190253c (Add VAE Training)
-
-                    loss = instance_loss + prior_loss
-=======
 
                     normal_loss = instance_loss + prior_loss
                     with_vae_loss = instance_loss + prior_loss + vae_loss.mean()
                     loss = normal_loss if vae_loss is None else with_vae_loss
->>>>>>> 190253c (Add VAE Training)
-
 
                     accelerator.backward(loss)
                     if accelerator.sync_gradients and not args.use_lora:

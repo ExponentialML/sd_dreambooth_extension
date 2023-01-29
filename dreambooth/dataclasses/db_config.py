@@ -21,7 +21,7 @@ def sanitize_name(name):
 
 class DreamboothConfig(BaseModel):
     adamw_weight_decay: float = 0.01
-    db_vae_weight_decay: float: 0.0
+    vae_weight_decay: float = 0.0
     attention: str = "default"
     cache_latents: bool = True
     center_crop: bool = True
@@ -43,7 +43,7 @@ class DreamboothConfig(BaseModel):
     hflip: bool = False
     initial_revision: int = 0
     learning_rate: float = 5e-6
-    vae_learning_rate: float: 5e-6
+    vae_learning_rate: float = 5e-6
     learning_rate_min: float = 1e-6
     lifetime_revision: int = 0
     lora_learning_rate: float = 1e-4
