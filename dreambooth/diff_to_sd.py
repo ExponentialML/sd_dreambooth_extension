@@ -319,7 +319,7 @@ def compile_checkpoint(
         log:bool =True, 
         snap_rev: str="", 
         trained_vae_name: str ="", 
-        train_vae: False
+        train_vae: bool = False
     ):
     """
 
