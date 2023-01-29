@@ -7,6 +7,7 @@ import logging
 import os
 import time
 import traceback
+import shutil
 from decimal import Decimal
 from pathlib import Path
 
@@ -156,18 +157,36 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
             unload_system_models()
 
         def create_vae():
+            train_vae_path = None
+            
+            if args.train_vae:
+                current_vae_path = os.path.join(args.pretrained_model_name_or_path, "vae")
+                train_vae_path = os.path.join(args.pretrained_model_name_or_path, f"vae_train_{args.revision}")
+                os.makedirs(train_vae_path, exist_ok=True)
+                
+                if os.path.exists(train_vae_path) and os.path.exists(os.path.join(args.pretrained_model_name_or_path, "vae")):
+                    shutil.rmtree(train_vae_path)
+                    shutil.copytree(current_vae_path, train_vae_path)             
+                    if not train_vae_path == None: print(f"Training new VAE at: {train_vae_path}")
+                else:
+                    print("Couldn't create new VAE. Please try training with VAE training off to continue.")
+                    return
+
+            disable_safe_unpickle()
             vae_path = args.pretrained_vae_name_or_path if args.pretrained_vae_name_or_path else \
                 args.pretrained_model_name_or_path
-            disable_safe_unpickle()
             new_vae = AutoencoderKL.from_pretrained(
-                vae_path,
+                vae_path if train_vae_path is None else train_vae_path,
                 subfolder=None if args.pretrained_vae_name_or_path else "vae",
-                revision=args.revision
+                revision=args.revision,
+                torch_dtype=torch.float32
             )
+
             enable_safe_unpickle()
             new_vae.requires_grad_(False)
-            new_vae.to(accelerator.device, dtype=weight_dtype)
+            new_vae.to(accelerator.device, dtype=torch.float32)
             return new_vae
+
         disable_safe_unpickle()
         # Load the tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
@@ -269,6 +288,9 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 logger.warning(f"Exception importing 8bit adam: {a}")
                 traceback.print_exc()
 
+        if args.train_vae:
+            vae_params = {"params": itertools.chain(vae.parameters()), "lr": args.vae_learning_rate, "weight_decay": args.vae_weight_decay}
+
         if args.use_lora:
             args.learning_rate = args.lora_learning_rate
         
@@ -290,6 +312,9 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
             lr=args.learning_rate,
             weight_decay=args.adamw_weight_decay
         )
+
+        if args.train_vae: optimizer.add_param_group(vae_params)
+
         noise_scheduler = DDPMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
 
         def cleanup_memory():
@@ -495,6 +520,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
         print(f"  Gradient Checkpointing: {args.gradient_checkpointing}")
         print(f"  EMA: {args.use_ema}")
         print(f"  UNET: {args.train_unet}")
+        print(f"  Train VAE: {args.train_vae}")
         print(f"  Freeze CLIP Normalization Layers: {args.freeze_clip_normalization}")
         print(f"  LR: {args.learning_rate}")
         if args.use_lora and stop_text_percentage > 0: print(f"  LoRA Text Encoder LR: {args.lora_txt_learning_rate}")
@@ -618,7 +644,19 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                         pbar.set_description("Saving Weights")
                         pbar.reset(4)
                         pbar.update()
+
+                        vae_name = f"vae_train_{args.revision}"
+                        vae_path = os.path.join(args.pretrained_model_name_or_path, vae_name)
+                        
                         try:
+                            if args.train_vae:
+                                os.makedirs(vae_path, exist_ok=True)
+                                if os.path.exists(vae_path):
+                                    print(f"Saving trained VAE to {vae_path}")
+                                    vae.save_pretrained(vae_path)
+                                else:
+                                    print("Trained VAE not found. Continuing...")
+
                             if not args.use_lora:
                                 out_file = None
                                 if save_snapshot:
@@ -654,8 +692,9 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.set_description("Compiling Checkpoint")
                                 snap_rev = str(args.revision) if save_snapshot else ""
                                 compile_checkpoint(args.model_name, reload_models=False, lora_path=out_file, log=False,
-                                                   snap_rev=snap_rev)
+                                                   snap_rev=snap_rev, trained_vae_name=vae_name, train_vae=args.train_vae)
                                 pbar.update()
+
                             if args.use_ema:
                                 ema_unet.restore(unet.parameters())
                                 ema_unet.to(accelerator.device, dtype=weight_dtype)
@@ -776,6 +815,9 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 unet.train()
                 
             train_tenc = epoch < text_encoder_epochs
+
+            vae.requires_grad_(False)
+
             if stop_text_percentage == 0:
                 train_tenc = False
             if not args.freeze_clip_normalization:
@@ -803,7 +845,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                     status.job_count = max_train_steps
                     status.job_no += train_batch_size
                     continue
-                with accelerator.accumulate(unet), accelerator.accumulate(text_encoder):
+                with accelerator.accumulate(unet), accelerator.accumulate(text_encoder), accelerator.accumulate(vae):
                     # Convert images to latent space
                     with torch.no_grad():
                         if args.cache_latents:
@@ -836,6 +878,17 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                         target = noise_scheduler.get_velocity(latents, noise, timesteps)
                     else:
                         target = noise
+
+                    # Train the VAE by computing the loss between the reconstruction and original image, then back propagate it.
+                    # Have to do a separate pass for encoding since we need to unfreeze the weights here.
+
+                    vae_loss = None
+                    if args.train_vae: 
+                        vae.requires_grad_(True) # Invert boolean to make it synonomous with the UI.
+                        encoded_img = vae.encode(batch["images"].to(dtype=weight_dtype))
+                        encoded_mean = encoded_img.latent_dist.mode()
+                        reconstruction = vae.decode(encoded_mean).sample
+                        vae_loss = torch.nn.functional.mse_loss(reconstruction, batch["images"], reduction="none")
 
                     model_pred_chunks = torch.split(noise_pred, 1, dim=0)
                     target_pred_chunks = torch.split(target, 1, dim=0)
@@ -883,8 +936,18 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
 
                         # Add the prior loss to the instance loss.
                         prior_loss *= current_prior_loss_weight
+<<<<<<< HEAD
                     
                     loss = instance_loss + prior_loss
+||||||| parent of 190253c (Add VAE Training)
+
+                    loss = instance_loss + prior_loss
+=======
+
+                    normal_loss = instance_loss + prior_loss
+                    with_vae_loss = instance_loss + prior_loss + vae_loss.mean()
+                    loss = normal_loss if vae_loss is None else with_vae_loss
+>>>>>>> 190253c (Add VAE Training)
 
 
                     accelerator.backward(loss)

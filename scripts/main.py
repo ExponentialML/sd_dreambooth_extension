@@ -255,6 +255,7 @@ def on_ui_tabs():
                                                           choices=schedulers)
 
                             db_learning_rate = gr.Number(label='Learning Rate', value=2e-6)
+                            db_vae_learning_rate = gr.Number(label="VAE Learning Rate", value=2e-6)
                             db_learning_rate_min = gr.Number(label='Min Learning Rate', value=1e-6, visible=False)
                             db_lr_cycles = gr.Number(label="Number of Hard Resets", value=1, precision=0, visible=False)
                             db_lr_factor = gr.Number(label="Constant/Linear Starting Factor", value=0.5, precision=2, visible=False)
@@ -315,10 +316,12 @@ def on_ui_tabs():
                                         choices=list_attention())
                                     db_cache_latents = gr.Checkbox(label="Cache Latents", value=True)
                                     db_train_unet = gr.Checkbox(label="Train UNET", value=True)
+                                    db_train_vae = gr.Checkbox(label="Train VAE", value=True)
                                     db_stop_text_encoder = gr.Slider(label="Step Ratio of Text Encoder Training", minimum=0, maximum=1, step=0.01, value=1, visible=True)
                                     db_freeze_clip_normalization = gr.Checkbox(label="Freeze CLIP Normalization Layers", visible=True, value=False)
                                     db_clip_skip = gr.Slider(label="Clip Skip", value=1, minimum=1, maximum=12, step=1)
-                                    db_adamw_weight_decay = gr.Slider(label="AdamW Weight Decay", minimum=0, maximum=1, step=1e-7, value=1e-2, visible=True)
+                                    db_adamw_weight_decay = gr.Slider(label="AdamW Weight Decay", minimum=0, maximum=1, step=1e-4, value=1e-2, visible=True)
+                                    db_vae_weight_decay = gr.Slider(label="VAE Weight Decay", minimum=0, maximum=1, step=1e-4, value=0.0, visible=True)
                                     db_pad_tokens = gr.Checkbox(label="Pad Tokens", value=True)
                                     db_strict_tokens = gr.Checkbox(label="Strict Tokens", value=False)
                                     db_shuffle_tags = gr.Checkbox(label="Shuffle Tags", value=True)
@@ -383,7 +386,7 @@ def on_ui_tabs():
                         db_save_ckpt_cancel = gr.Checkbox(label="Generate a .ckpt file when training is canceled.")
                     with gr.Column(visible=False) as lora_save_col:
                         gr.HTML("Lora")
-                        db_lora_rank = gr.Slider(label="Lora Rank", value=4, minimum=1, maximum=100, step=1)
+                        db_lora_rank = gr.Slider(label="Lora Rank", value=4, minimum=1, maximum=128, step=2)
                         db_lora_weight = gr.Slider(label="Lora Weight", value=1, minimum=0.1, maximum=1, step=0.1)
                         db_lora_txt_weight = gr.Slider(label="Lora Text Weight", value=1, minimum=0.1, maximum=1,
                                                        step=0.1)
@@ -558,6 +561,7 @@ def on_ui_tabs():
             db_half_model,
             db_hflip,
             db_learning_rate,
+            db_vae_learning_rate,
             db_learning_rate_min,
             db_lora_learning_rate,
             db_lora_model_name,
@@ -574,6 +578,7 @@ def on_ui_tabs():
             db_max_token_length,
             db_mixed_precision,
             db_adamw_weight_decay,
+            db_vae_weight_decay,
             db_model_path,
             db_num_train_epochs,
             db_pad_tokens,
@@ -606,7 +611,8 @@ def on_ui_tabs():
             db_src,
             db_train_batch_size,
             db_train_imagic_only,
-            db_train_unet,         
+            db_train_unet,
+            db_train_vae,
             db_stop_text_encoder,
             db_use_8bit_adam,
             db_use_concepts,

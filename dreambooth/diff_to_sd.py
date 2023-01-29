@@ -312,7 +312,15 @@ def convert_text_enc_state_dict(text_enc_dict: Dict[str, torch.Tensor]):
     return text_enc_dict
 
 
-def compile_checkpoint(model_name: str, lora_path: str=None, reload_models: bool = True, log:bool =True, snap_rev: str=""):
+def compile_checkpoint(
+        model_name: str, 
+        lora_path: str=None, 
+        reload_models: bool = True, 
+        log:bool =True, 
+        snap_rev: str="", 
+        trained_vae_name: str ="", 
+        train_vae: False
+    ):
     """
 
     @param model_name: The model name to compile
@@ -376,7 +384,11 @@ def compile_checkpoint(model_name: str, lora_path: str=None, reload_models: bool
     if text_enc_path is None:
         text_enc_path = osp.join(model_path, "text_encoder", "pytorch_model.bin")
 
-    vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
+
+    if trained_vae_name != "" and not train_vae:
+        vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
+    else:
+        vae_path = osp.join(model_path, trained_vae_name, "diffusion_pytorch_model.bin")
 
     try:
         printi("Converting unet...", log=log)
