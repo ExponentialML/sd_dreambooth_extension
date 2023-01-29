@@ -894,8 +894,6 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                     instance_pred_chunks = []
                     prior_pred_chunks = []
 
-                    print(batch["types"])
-
                     # Iterate over the list of boolean values in batch["types"]
                     for i, is_prior in enumerate(batch["types"]):
                         # If is_prior is False, append the corresponding chunk to instance_chunks
