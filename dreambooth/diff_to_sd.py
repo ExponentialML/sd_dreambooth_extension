@@ -386,7 +386,7 @@ def compile_checkpoint(
 
     vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
 
-    if trained_vae_name != "" and args.train_vae:
+    if trained_vae_name != "" and train_vae:
         vae_path = osp.join(model_path, trained_vae_name, "diffusion_pytorch_model.bin")
     
     try:
