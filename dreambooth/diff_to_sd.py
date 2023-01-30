@@ -318,8 +318,8 @@ def compile_checkpoint(
         reload_models: bool = True, 
         log:bool =True, 
         snap_rev: str="", 
-        trained_vae_name: str = "", 
-        train_vae: bool = False
+        custom_vae_name: str = "", 
+        with_custom_vae: bool = False
     ):
     """
 
@@ -386,9 +386,14 @@ def compile_checkpoint(
 
     vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
 
-    if trained_vae_name != "" and train_vae:
-        vae_path = osp.join(model_path, trained_vae_name, "diffusion_pytorch_model.bin")
-    
+    if custom_vae_name != "" and with_custom_vae:
+        new_vae_path = osp.join(model_path, custom_vae_name, "diffusion_pytorch_model.bin")
+        if os.path.exists(new_vae_path):
+            print(f"Found custom VAE. Using {new_vae_path}")
+            vae_path = new_vae_path
+        else:
+            print("Couldn't find custom VAE. Using default from pretrained.")
+            
     try:
         printi("Converting unet...", log=log)
 

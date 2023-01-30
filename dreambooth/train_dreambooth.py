@@ -645,7 +645,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                         pbar.reset(4)
                         pbar.update()
                         try:
-                            
+
                             vae_name = f"vae_train_{args.revision}"
                             vae_path = os.path.join(args.pretrained_model_name_or_path, vae_name)
                             os.makedirs(vae_path, exist_ok=True)
@@ -692,7 +692,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.set_description("Compiling Checkpoint")
                                 snap_rev = str(args.revision) if save_snapshot else ""
                                 compile_checkpoint(args.model_name, reload_models=False, lora_path=out_file, log=False,
-                                                   snap_rev=snap_rev, trained_vae_name=vae_name, train_vae=args.train_vae)
+                                                   snap_rev=snap_rev, custom_vae_name=vae_name, with_custom_vae=args.train_vae)
                                 pbar.update()
 
                             if args.use_ema:

@@ -141,7 +141,15 @@ def ui_gen_ckpt(model_name: str):
     config = from_file(model_name)
     printm("Config loaded")
     lora_path = config.lora_model_name
-    res = compile_checkpoint(model_name, lora_path, True, True, config.snapshot)
+    res = compile_checkpoint(
+        model_name, 
+        lora_path, 
+        True, 
+        True, 
+        config.snapshot, 
+        custom_vae_name=config.pretrained_vae_name_or_path,
+        with_custom_vae=bool(config.pretrained_vae_name_or_path.strip())
+        )
     return res
 
 
