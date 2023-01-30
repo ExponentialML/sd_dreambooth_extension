@@ -884,7 +884,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
 
                     vae_loss = None
                     if args.train_vae: 
-                        vae.requires_grad_(True) # Invert boolean to make it synonomous with the UI.
+                        vae.requires_grad_(True)
                         encoded_img = vae.encode(batch["images"].to(dtype=weight_dtype))
                         encoded_mean = encoded_img.latent_dist.mode()
                         reconstruction = vae.decode(encoded_mean).sample
