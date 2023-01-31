@@ -167,16 +167,17 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 if os.path.exists(train_vae_path) and os.path.exists(os.path.join(args.pretrained_model_name_or_path, "vae")):
                     shutil.rmtree(train_vae_path)
                     shutil.copytree(current_vae_path, train_vae_path)             
-                    if not train_vae_path == None: print(f"Training new VAE at: {train_vae_path}")
+                    if not train_vae_path == None and os.path.exists(train_vae_path, "diffusion_pytorch_model.bin"): print(f"Training new VAE at: {train_vae_path}")
                 else:
-                    print("Couldn't create new VAE. Please try training with VAE training off to continue.")
-                    return
+                    train_vae_path = None
+                    print("Couldn't create new VAE. Trying default VAE.")
+
 
             disable_safe_unpickle()
             vae_path = args.pretrained_vae_name_or_path if args.pretrained_vae_name_or_path else \
                 args.pretrained_model_name_or_path
             new_vae = AutoencoderKL.from_pretrained(
-                vae_path if train_vae_path is None else train_vae_path,
+                vae_path if train_vae_path == None else train_vae_path,
                 subfolder=None if args.pretrained_vae_name_or_path else "vae",
                 revision=args.revision,
                 torch_dtype=torch.float32
@@ -936,7 +937,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                         prior_loss *= current_prior_loss_weight
 
                     normal_loss = instance_loss + prior_loss
-                    with_vae_loss = instance_loss + prior_loss + vae_loss.mean()
+                    if args.train_vae: with_vae_loss = instance_loss + prior_loss + vae_loss.mean()
                     loss = normal_loss if vae_loss is None else with_vae_loss
 
                     accelerator.backward(loss)
