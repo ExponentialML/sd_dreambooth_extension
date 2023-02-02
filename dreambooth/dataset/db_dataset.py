@@ -369,7 +369,7 @@ class DbDataset(torch.utils.data.Dataset):
             rebuilt = self.tokenizer.decode(cap_tokens.tolist()[0])
             input_ids = (caption, rebuilt)
         # If we have reached the end of our bucket, increment to the next, update the count, reset image index.
-        example = {"image": image_data, "input_ids": input_ids, "res": self.active_resolution, "is_class":is_class_image}
+        example = {"image": image_data, "input_ids": input_ids, "res": self.active_resolution, "is_class":is_class_image, "caption": caption}
         return example
 
 

@@ -390,6 +390,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
 
         def collate_fn(examples):
             input_ids = [example["input_ids"] for example in examples]
+            caption = [example["caption"] for example in examples]
             pixel_values = [example["image"] for example in examples]
             types = [example["is_class"] for example in examples]
             res = [example["res"] for example in examples]
@@ -402,7 +403,8 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 "input_ids": input_ids,
                 "images": pixel_values,
                 "types": types,
-                "res": res
+                "res": res,
+                "caption": caption
             }
             return batch_data
 
@@ -479,6 +481,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
         last_image_save = 0
         resume_from_checkpoint = False
         batch_res = (args.resolution, args.resolution)
+        batch_caption = None
         new_hotness = os.path.join(args.model_dir, "checkpoints", f"checkpoint-{args.snapshot}")
         if os.path.exists(new_hotness):
             accelerator.print(f"Resuming from checkpoint {new_hotness}")
@@ -715,10 +718,16 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.reset(len(prompts) + 2)
                                 ci = 0
                                 for c in prompts:
-                                    preview_res = c.resolution if not args.preview_bucket_res else batch_res
+                                    preview_res = c.resolution
+                                    preview_caption = c.prompt
+
+                                    if args.preview_bucket_res and batch_caption is not None:
+                                        preview_res = batch_res
+                                        preview_caption = batch_caption
+
                                     c.out_dir = os.path.join(args.model_dir, "samples")
                                     g_cuda = torch.Generator(device=accelerator.device).manual_seed(int(c.seed))
-                                    s_image = s_pipeline(c.prompt, num_inference_steps=c.steps,
+                                    s_image = s_pipeline(preview_caption, num_inference_steps=c.steps,
                                                          guidance_scale=c.scale,
                                                          negative_prompt=c.negative_prompt,
                                                          height=preview_res[0],
@@ -941,7 +950,10 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 global_step += train_batch_size
                 args.revision += train_batch_size
                 status.job_no += train_batch_size
-                batch_res = batch_res = (batch["res"][0][1], batch["res"][0][0])
+
+                if args.preview_bucket_res:
+                    batch_res = batch_res = (batch["res"][0][1], batch["res"][0][0])
+                    batch_caption = batch["caption"]
                 del noise_pred
                 del latents
                 del encoder_hidden_states
