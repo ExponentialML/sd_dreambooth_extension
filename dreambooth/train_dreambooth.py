@@ -715,7 +715,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.reset(len(prompts) + 2)
                                 ci = 0
                                 for c in prompts:
-                                    preview_res = c.resolution if not args.use_batch_res else batch_res
+                                    preview_res = c.resolution if not args.preview_bucket_res else batch_res
                                     c.out_dir = os.path.join(args.model_dir, "samples")
                                     g_cuda = torch.Generator(device=accelerator.device).manual_seed(int(c.seed))
                                     s_image = s_pipeline(c.prompt, num_inference_steps=c.steps,
