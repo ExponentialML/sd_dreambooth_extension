@@ -146,6 +146,7 @@ let db_titles = {
     "AdamW Weight Decay": "The weight decay of the AdamW Optimizer. Values closer to 0 closely match your training dataset, and values closer to 1 generalize more and deviate from your training dataset. Default is 1e-2, values lower than 0.1 are recommended.",
     "Amount of time to pause between Epochs (s)": "When 'Pause After N Epochs' is greater than 0, this is the amount of time, in seconds, that training will be paused for",
     "Apply Horizontal Flip": "Randomly decide to flip images horizontally.",
+    "Bucket Resolution Train Preview": "Use the bucket resolution for previews during training instead of square images.",
     "Batch Size": "How many images to process at once per training step?",
     "Cache Latents": "When this box is checked latents will be cached. Caching latents will use more VRAM, but improve training speed.",
     "Cancel": "Cancel training.",

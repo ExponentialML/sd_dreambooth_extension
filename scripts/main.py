@@ -274,6 +274,7 @@ def on_ui_tabs():
                             db_resolution = gr.Slider(label="Max Resolution", step=64, minimum=128, value=512, maximum=4096)
                             db_center_crop = gr.Checkbox(label="Center Crop", value=False)
                             db_hflip = gr.Checkbox(label="Apply Horizontal Flip", value=False)
+                            db_preview_bucket_res = gr.Checkbox(label="Bucket Resolution Train Preview", value=False)
                             db_sanity_prompt = gr.Textbox(label="Sanity Sample Prompt", placeholder="A generic prompt "
                                                                                                     "used to generate"
                                                                                                     " a sample image "
@@ -584,6 +585,7 @@ def on_ui_tabs():
             db_graph_smoothing,
             db_half_model,
             db_hflip,
+            db_preview_bucket_res,
             db_learning_rate,
             db_learning_rate_min,
             db_lora_learning_rate,

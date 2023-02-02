@@ -40,6 +40,7 @@ class DreamboothConfig(BaseModel):
     train_unfrozen: bool = True
     has_ema: bool = False
     hflip: bool = False
+    preview_bucket_res: bool = False
     initial_revision: int = 0
     learning_rate: float = 5e-6
     learning_rate_min: float = 1e-6

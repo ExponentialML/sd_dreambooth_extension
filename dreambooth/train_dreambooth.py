@@ -392,6 +392,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
             input_ids = [example["input_ids"] for example in examples]
             pixel_values = [example["image"] for example in examples]
             types = [example["is_class"] for example in examples]
+            res = [example["res"] for example in examples]
             pixel_values = torch.stack(pixel_values)
             if not args.cache_latents:
                 pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
@@ -400,7 +401,8 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
             batch_data = {
                 "input_ids": input_ids,
                 "images": pixel_values,
-                "types": types
+                "types": types,
+                "res": res
             }
             return batch_data
 
@@ -476,6 +478,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
         last_model_save = 0
         last_image_save = 0
         resume_from_checkpoint = False
+        batch_res = (args.resolution, args.resolution)
         new_hotness = os.path.join(args.model_dir, "checkpoints", f"checkpoint-{args.snapshot}")
         if os.path.exists(new_hotness):
             accelerator.print(f"Resuming from checkpoint {new_hotness}")
@@ -712,13 +715,14 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.reset(len(prompts) + 2)
                                 ci = 0
                                 for c in prompts:
+                                    preview_res = c.resolution if not args.use_batch_res else batch_res
                                     c.out_dir = os.path.join(args.model_dir, "samples")
                                     g_cuda = torch.Generator(device=accelerator.device).manual_seed(int(c.seed))
                                     s_image = s_pipeline(c.prompt, num_inference_steps=c.steps,
                                                          guidance_scale=c.scale,
                                                          negative_prompt=c.negative_prompt,
-                                                         height=c.resolution[0],
-                                                         width=c.resolution[1],
+                                                         height=preview_res[0],
+                                                         width=preview_res[1],
                                                          generator=g_cuda).images[0]
                                     sample_prompts.append(c.prompt)
                                     image_name = db_save_image(s_image, c, custom_name=f"sample_{args.revision}-{ci}")
@@ -937,6 +941,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 global_step += train_batch_size
                 args.revision += train_batch_size
                 status.job_no += train_batch_size
+                batch_res = (batch["res"][1], batch["res"][0])
                 del noise_pred
                 del latents
                 del encoder_hidden_states
