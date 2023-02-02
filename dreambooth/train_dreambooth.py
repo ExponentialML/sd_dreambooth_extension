@@ -941,7 +941,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 global_step += train_batch_size
                 args.revision += train_batch_size
                 status.job_no += train_batch_size
-                batch_res = (batch["res"][1], batch["res"][0])
+                batch_res = batch_res = (batch["res"][0][1], batch["res"][0][0])
                 del noise_pred
                 del latents
                 del encoder_hidden_states
