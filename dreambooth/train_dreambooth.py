@@ -482,6 +482,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
         resume_from_checkpoint = False
         batch_res = (args.resolution, args.resolution)
         batch_caption = None
+        batch_prior = True
         new_hotness = os.path.join(args.model_dir, "checkpoints", f"checkpoint-{args.snapshot}")
         if os.path.exists(new_hotness):
             accelerator.print(f"Resuming from checkpoint {new_hotness}")
@@ -721,7 +722,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                     preview_res = c.resolution
                                     preview_caption = c.prompt
 
-                                    if args.preview_bucket_res and batch_caption is not None:
+                                    if args.preview_bucket_res and batch_caption is not None and not batch_prior:
                                         preview_res = batch_res
                                         preview_caption = batch_caption
 
@@ -954,6 +955,7 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 if args.preview_bucket_res:
                     batch_res = batch_res = (batch["res"][0][1], batch["res"][0][0])
                     batch_caption = batch["caption"]
+                    batch_prior = batch["types"]
                 del noise_pred
                 del latents
                 del encoder_hidden_states
