@@ -719,20 +719,18 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                                 pbar.reset(len(prompts) + 2)
                                 ci = 0
                                 for c in prompts:
-                                    preview_res = c.resolution
-                                    preview_caption = c.prompt
 
                                     if args.preview_bucket_res and batch_caption is not None and not batch_prior:
-                                        preview_res = batch_res
-                                        preview_caption = batch_caption
+                                        c.resolution = batch_res
+                                        c.prompt = batch_caption
 
                                     c.out_dir = os.path.join(args.model_dir, "samples")
                                     g_cuda = torch.Generator(device=accelerator.device).manual_seed(int(c.seed))
-                                    s_image = s_pipeline(preview_caption, num_inference_steps=c.steps,
+                                    s_image = s_pipeline(c.prompt, num_inference_steps=c.steps,
                                                          guidance_scale=c.scale,
                                                          negative_prompt=c.negative_prompt,
-                                                         height=preview_res[0],
-                                                         width=preview_res[1],
+                                                         height=c.resolution[0],
+                                                         width=c.resolution[1],
                                                          generator=g_cuda).images[0]
                                     sample_prompts.append(c.prompt)
                                     image_name = db_save_image(s_image, c, custom_name=f"sample_{args.revision}-{ci}")
@@ -953,9 +951,16 @@ def main(args: DreamboothConfig, use_txt2img: bool = True) -> TrainResult:
                 status.job_no += train_batch_size
 
                 if args.preview_bucket_res:
-                    batch_res = batch_res = (batch["res"][0][1], batch["res"][0][0])
-                    batch_caption = batch["caption"]
-                    batch_prior = batch["types"]
+                    batch_prior = batch["types"][0]
+                    
+                    #Reset to defaults to not mix class prior.
+                    if batch_prior:
+                        batch_res = (args.resolution, args.resolution)
+                        batch_caption = None
+                    else:
+                        batch_res = (batch["res"][0][1], batch["res"][0][0])
+                        batch_caption = batch["caption"][0]
+
                 del noise_pred
                 del latents
                 del encoder_hidden_states
